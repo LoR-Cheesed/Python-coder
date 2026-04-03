@@ -12,7 +12,7 @@ import random
 from pygame.math import Vector2
 
 # Colors for the game
-basic_color = [70, 70, 255]
+basic_color = (70, 70, 255)
 sniper_color = (255, 70, 70)
 demo_color = (255, 130, 0)
 summon_color = (70, 255, 70)
@@ -41,7 +41,7 @@ class Player(pg.sprite.Sprite):
     def update(self):
         # Subtract pos vector from mouse pos to get the base,
         # normalize vector and multiply by the desired speed
-        self.vel = (pg.mouse.get_pos() - self.pos).normalize() * 5
+        self.vel = (pg.mouse.get_pos() - self.pos).normalize()
         # Rotate the image
         radius, angle = self.vel.as_polar()
         self.image = pg.transform.rotozoom(self.orig_image, -angle, 1)
@@ -66,7 +66,7 @@ class Player(pg.sprite.Sprite):
             summon_triangle_3 = pg.draw.circle(self.image, pg.Color(summon_color), (535, 15), 10)
             
         line = pg.draw.line(self.image, pg.Color(170, 30, 30),
-                        (550, 15), (1000, 0), width=2)
+                        (550, 15), (1000, 15), width=2)
     # makes the life system exist
     def life_system(self):
         lives = 3
