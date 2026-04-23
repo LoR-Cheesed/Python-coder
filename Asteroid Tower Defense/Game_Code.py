@@ -11,12 +11,20 @@ import math
 import random
 from pygame.math import Vector2
 
+pg.init()
+pg.font.init()
+screen = pg.display.set_mode((640, 640))
+
 # Colors for the game
 basic_color = (70, 70, 255)
 sniper_color = (255, 70, 70)
 demo_color = (255, 130, 0)
 summon_color = (70, 255, 70)
 black = (255, 255, 255)
+
+# images for the game
+heart = pg.image.load('heart.png').convert_alpha()
+heart_rect = heart.get_rect()
 
 # important out-of-function variables
 stats = []
@@ -39,8 +47,7 @@ class Player(pg.sprite.Sprite):
         self.pos = Vector2(pos)
 
     def update(self):
-        # Subtract pos vector from mouse pos to get the base,
-        # normalize vector and multiply by the desired speed
+        # Subtract pos vector from mouse pos to get the base, then normalize the vector.
         self.vel = (pg.mouse.get_pos() - self.pos).normalize()
         # Rotate the image
         radius, angle = self.vel.as_polar()
@@ -271,11 +278,24 @@ def role_chooser():
             if mouse_buttons[0] == True:
                 set_class = "summoner"
 
+# adds a cooldown bar for the bullets
+def cooldown():
+    current_time = pg.time.get_ticks()
+    reload_time = stats[1]
+    time_between = 0
+    time_between = current_time - last_shot
+    cooldown_base_length = 50
+    time_var = cooldown_base_length / reload_time
+    cooldown_length = time_between * time_var
+    if  0 < cooldown_length <= 50:
+        bar_rect = pg.Rect(295, 355, cooldown_length, 3)
+        bar = pg.draw.rect(screen, pg.Color("white"), bar_rect, width=0)
+
 # puts the bullet and its position in a list, used for fire_bullet to work
 def list_bullet():
     global bullets, last_shot
-    current_time = pg.time.get_ticks()
     if stats.__len__ != 0:
+        current_time = pg.time.get_ticks()
         reload_time = stats[1]
         time_between = 0
         time_between = current_time - last_shot
@@ -298,6 +318,7 @@ def fire_bullet():
 
 # The main loop, holding (most) all the functions made.
 def main():
+    global current_time
     # some important things that will break the game if they dont exist
     clock = pg.time.Clock()
     all_sprites = pg.sprite.Group()
@@ -322,22 +343,16 @@ def main():
             all_sprites.update()
             screen.fill((30, 30, 30))
             all_sprites.draw(screen)
+            cooldown()
         # shoots the bullet, makes the clock, and makes the screen seeable
         if len(stats) != 0:
             fire_bullet()
         pg.display.flip()
         clock.tick(30)
 
-# the place where everything is initiated
-if __name__ == '__main__':
-    screen = pg.display.set_mode((640, 640))
-    # any images (and their rects) go between ^^^ and pg.init here
-    heart = pg.image.load('heart.png').convert_alpha()
-    heart_rect = heart.get_rect()
-    pg.init()
-    pg.font.init()
-    main()
-    pg.quit()
+# the main loop
+main()
+pg.quit()
 
 """
 TO-DO LIST:
