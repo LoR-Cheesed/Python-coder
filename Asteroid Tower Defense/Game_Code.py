@@ -25,6 +25,8 @@ black = (255, 255, 255)
 # images for the game
 heart = pg.image.load('heart.png').convert_alpha()
 heart_rect = heart.get_rect()
+asteroid = pg.image.load('asteroid.png').convert_alpha()
+asteroid_rect = asteroid.get_rect()
 
 # important out-of-function variables
 stats = []
@@ -86,7 +88,7 @@ class Player(pg.sprite.Sprite):
         for life in lives:
             pass
         if lives == 0:
-            pg.quit
+            pass
 
 
 
@@ -151,7 +153,7 @@ def display_text(text, font, pos, color):
 
 # Allows user to pick what role they want to play as (UNOPTIMIZED, DO NOT OPEN UNLESS NESSECARY)
 def role_chooser():
-    global set_class
+    global set_class, mouse_buttons
     cursor_pos = pg.mouse.get_pos()
     mouse_buttons = pg.mouse.get_pressed(3)
     # the overlay of the class chooser
@@ -294,10 +296,9 @@ def cooldown():
 # puts the bullet and its position in a list, used for fire_bullet to work
 def list_bullet():
     global bullets, last_shot
-    if stats.__len__ != 0:
+    if len(stats) != 0:
         current_time = pg.time.get_ticks()
         reload_time = stats[1]
-        time_between = 0
         time_between = current_time - last_shot
         if (time_between >= reload_time):
             bullets.append(Bullet(320, 320))
@@ -306,7 +307,7 @@ def list_bullet():
 # lets the bullet fired be seen, and adds a range to it
 def fire_bullet():
     global bullet
-    if stats.__len__ != 0:
+    if len(stats)!= 0:
         bul_range = pg.Rect(*stats[5], *stats[2])
         for bullet in bullets[:]:
             bullet.update()
@@ -336,7 +337,7 @@ def main():
                     bullet_stats()
         else:
             # adds a reload time, so the user can't just spamfire
-            if event.type == pg.MOUSEBUTTONDOWN:
+            if mouse_buttons[0] == True:
                 list_bullet()
             # adds some important things
             player.add_triangle()
@@ -345,6 +346,7 @@ def main():
             all_sprites.draw(screen)
             cooldown()
         # shoots the bullet, makes the clock, and makes the screen seeable
+        mouse_buttons = pg.mouse.get_pressed(3)
         if len(stats) != 0:
             fire_bullet()
         pg.display.flip()
