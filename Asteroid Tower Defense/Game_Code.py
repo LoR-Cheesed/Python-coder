@@ -10,6 +10,7 @@ import pygame as pg
 import math
 import random
 from pygame.math import Vector2
+from pygame.math import Vector3
 
 pg.init()
 pg.font.init()
@@ -21,6 +22,7 @@ sniper_color = (255, 70, 70)
 demo_color = (255, 130, 0)
 summon_color = (70, 255, 70)
 black = (255, 255, 255)
+bg_color = (30, 30, 30)
 
 # images for the game
 heart = pg.image.load('heart.png').convert_alpha()
@@ -33,6 +35,7 @@ stats = []
 set_class = None
 bullets = []
 last_shot = 0
+total_bullets = 0
 bul_range = pg.Rect(150, 150, 450, 450)
 
 # Class holding the Player and (most) all of its functions
@@ -58,6 +61,8 @@ class Player(pg.sprite.Sprite):
 
     # allows set_class to actually change the triangle
     def add_triangle(self):
+        line = pg.draw.line(self.image, pg.Color(170, 30, 30),
+                        (525, 15), (1000, 15), width=2)
         if set_class == "basic":
             basic_triangle = pg.draw.polygon(self.image, pg.Color(basic_color),
                     ((500, 0),(500, 30), (550, 15)))
@@ -71,11 +76,9 @@ class Player(pg.sprite.Sprite):
             # im STILL blaming demry for this bro ts pmo
             summon_triangle_1 = pg.draw.polygon(self.image, pg.Color(summon_color),
                         ((500, 0), (500, 30), (545, 15)))
-            summon_triangle_2 = pg.draw.circle(self.image, pg.Color(30, 30, 30), (530, 15), 10)
+            summon_triangle_2 = pg.draw.circle(self.image, bg_color, (530, 15), 10)
             summon_triangle_3 = pg.draw.circle(self.image, pg.Color(summon_color), (535, 15), 10)
             
-        line = pg.draw.line(self.image, pg.Color(170, 30, 30),
-                        (550, 15), (1000, 15), width=2)
     # makes the life system exist
     def life_system(self):
         lives = 3
@@ -89,6 +92,7 @@ class Player(pg.sprite.Sprite):
             pass
         if lives == 0:
             pass
+            #game_over()
 
 
 
@@ -127,12 +131,13 @@ class Enemy:
 # sets the stats of bullets for each class
 def bullet_stats():
     # some variables to dictate how bullets work for each class
-    # the lists will go in order as such: [bullet speed, reload, range, bullet size, color, range position, damage]
+    # the lists will go in order as such: [bullet speed(0), reload(1), range(2), bullet size(3), color(4),
+    #  range position(5), damage(6)]
     global stats
     basic_stats = [20, 400, (450, 450), (5, 6), (200, 200, 255), (100, 100), 2]
     sniper_stats = [40, 800, (640, 640), (30, 2), (255, 200, 200), (0, 0), 4]
-    demo_stats = [15, 600, (400, 400), (10, 10), (255, 200, 150), (125, 125), 3]
-    summon_stats = [15, 200, (400, 400), (7, 3), (200, 255, 200), (125, 125), 1]
+    demo_stats = [15, 600, (400, 400), (10, 10), (255, 200, 150), (125, 125), 8]
+    summon_stats = [15, 200, (400, 400), (7, 3), (200, 255, 200), (125, 125), 20]
     if set_class == "basic":
         stats = basic_stats
     elif set_class == "sniper":
@@ -143,7 +148,14 @@ def bullet_stats():
         stats = summon_stats
     else:
         stats = basic_stats
-
+    
+def fade_out(duration, start_color, end_color, start_time):
+    global cts_time
+    current_time = pg.time.get_ticks()
+    elapsed = current_time - start_time
+    progress = min(elapsed / duration, 1.0)
+    current_color = start_color.lerp(end_color, progress)
+    return current_color
 
 # Simplifies making text appear on screen
 def display_text(text, font, pos, color):
@@ -295,14 +307,15 @@ def cooldown():
 
 # puts the bullet and its position in a list, used for fire_bullet to work
 def list_bullet():
-    global bullets, last_shot
+    global bullets, last_shot, total_bullets
     if len(stats) != 0:
         current_time = pg.time.get_ticks()
         reload_time = stats[1]
         time_between = current_time - last_shot
         if (time_between >= reload_time):
             bullets.append(Bullet(320, 320))
-            last_shot = current_time
+            total_bullets += 1
+            last_shot = current_time   
 
 # lets the bullet fired be seen, and adds a range to it
 def fire_bullet():
@@ -316,10 +329,15 @@ def fire_bullet():
         for bullet in bullets:
             bullet.draw(screen)
 
+def click_to_shoot():
+    current_color = fade_out(5000, Vector3(255, 255, 255), Vector3(30, 30, 30), cts_time)
+    cts_font = pg.font.SysFont(None, 50, None)
+    cts_text = display_text("Click/Hold to Shoot", cts_font, (320, 100), current_color)
+
 
 # The main loop, holding (most) all the functions made.
 def main():
-    global current_time
+    global current_time, cts_time
     # some important things that will break the game if they dont exist
     clock = pg.time.Clock()
     all_sprites = pg.sprite.Group()
@@ -335,6 +353,7 @@ def main():
                 role_chooser()
                 if set_class != None:
                     bullet_stats()
+                    cts_time = pg.time.get_ticks()
         else:
             # adds a reload time, so the user can't just spamfire
             if mouse_buttons[0] == True:
@@ -342,7 +361,8 @@ def main():
             # adds some important things
             player.add_triangle()
             all_sprites.update()
-            screen.fill((30, 30, 30))
+            screen.fill(bg_color)
+            click_to_shoot()
             all_sprites.draw(screen)
             cooldown()
         # shoots the bullet, makes the clock, and makes the screen seeable
