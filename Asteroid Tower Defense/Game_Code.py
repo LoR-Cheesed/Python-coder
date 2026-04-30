@@ -25,9 +25,9 @@ black = (255, 255, 255)
 bg_color = (30, 30, 30)
 
 # images for the game
-heart = pg.image.load('heart.png').convert_alpha()
+heart = pg.image.load('images/heart.png').convert_alpha()
 heart_rect = heart.get_rect()
-asteroid = pg.image.load('asteroid.png').convert_alpha()
+asteroid = pg.image.load('images/asteroid.png').convert_alpha()
 asteroid_rect = asteroid.get_rect()
 
 # important out-of-function variables
@@ -37,6 +37,9 @@ bullets = []
 last_shot = 0
 total_bullets = 0
 bul_range = pg.Rect(150, 150, 450, 450)
+enemy_list = []
+tick1 = 0
+new_enemy = random.randint(10,50)
 
 # Class holding the Player and (most) all of its functions
 class Player(pg.sprite.Sprite):
@@ -120,6 +123,8 @@ class Bullet:
                     self.pos[1]+self.dir[1]*self.speed)
 
     def draw(self, surf):
+        global bullet_rect
+
         bullet_rect = self.bullet.get_rect(center = self.pos)
         surf.blit(self.bullet, bullet_rect)  
 
@@ -127,6 +132,46 @@ class Bullet:
 class Enemy:
     def __init__(self):
         pass
+    def render_enemies():
+        global enemy_list
+
+        del_list = []
+        for i in range(len(enemy_list)):
+            p1 = Vector2(enemy_list[i][0][0],enemy_list[i][0][1])
+            p2 = Vector2(320,320)
+            dir = p2 - p1
+            dir = dir.normalize()
+            #new_pos = (enemy_list[i][0][0]+math.sin(dir)*enemy_list[i][3],enemy_list[i][0][1]+math.cos(dir)*enemy_list[i][3])
+            new_pos = enemy_list[i][0] + dir*enemy_list[i][3]
+
+            enemy_list[i] = (new_pos,(enemy_list[i][1]+enemy_list[i][3])%360,enemy_list[i][2],enemy_list[i][3],enemy_list[i][4])
+            
+            enemyV = pg.transform.scale(asteroid, (enemy_list[i][2],enemy_list[i][2]))
+            enemyV = pg.transform.rotate(enemyV, enemy_list[i][1])
+            new_rect = enemyV.get_rect(center=enemy_list[i][0])
+            screen.blit(enemyV, new_rect)
+
+            if new_rect.colliderect(pg.Rect(310, 310, 20, 20)):
+                del_list.append(i)
+            if new_rect.colliderect(bullet_rect):
+                del_list.append(i)
+            
+        for i in range(len(del_list)):
+            del enemy_list[del_list[i]]
+
+    def spawn_enemy():
+        global enemy_list
+        
+        es = random.randint(0,1)
+        if es == 0:
+            ex = random.randint(0,640)
+            ey = random.randint(0,1)*640
+        else:
+            ex = random.randint(0,1)*640
+            ey = random.randint(0,640)
+
+        enemy_list.append((Vector2(ex,ey),0,random.randint(50,100),5,3))
+
 
 # sets the stats of bullets for each class
 def bullet_stats():
@@ -337,7 +382,7 @@ def click_to_shoot():
 
 # The main loop, holding (most) all the functions made.
 def main():
-    global current_time, cts_time
+    global current_time, cts_time, tick1, new_enemy
     # some important things that will break the game if they dont exist
     clock = pg.time.Clock()
     all_sprites = pg.sprite.Group()
@@ -358,6 +403,11 @@ def main():
             # adds a reload time, so the user can't just spamfire
             if mouse_buttons[0] == True:
                 list_bullet()
+            tick1 += 1
+            if tick1 > new_enemy:
+                new_enemy = tick1+random.randint(20,60)
+                Enemy.spawn_enemy()
+            
             # adds some important things
             player.add_triangle()
             all_sprites.update()
@@ -365,6 +415,7 @@ def main():
             click_to_shoot()
             all_sprites.draw(screen)
             cooldown()
+            Enemy.render_enemies()
         # shoots the bullet, makes the clock, and makes the screen seeable
         mouse_buttons = pg.mouse.get_pressed(3)
         if len(stats) != 0:
